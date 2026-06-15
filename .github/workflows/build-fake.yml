@@ -6,7 +6,10 @@ on:
       sdk_url:
         description: 'OpenWrt SDK Download URL'
         required: true
-        default: 'https://downloads.openwrt.org/releases/25.12.4/targets/armsr/armv8/openwrt-sdk-25.12.4-armsr-armv8_gcc-14.3.0_musl.Linux-x86_64.tar.zst'
+        default: 'https://downloads.openwrt.org/releases/24.10.2/targets/rockchip/armv8/openwrt-sdk-24.10.2-rockchip-armv8_gcc-13.3.0_musl.Linux-x86_64.tar.zst'
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
 jobs:
   build:
@@ -37,37 +40,36 @@ jobs:
       - name: Create Fake kmod-dummy package
         run: |
           mkdir -p sdk/package/kmod-dummy
+          # 靠左对齐写入，确保无任何 Yaml 缩进带来的空格污染
           cat << 'EOF' > sdk/package/kmod-dummy/Makefile
-          include $(TOPDIR)/rules.mk
+include $(TOPDIR)/rules.mk
 
-          PKG_NAME:=kmod-dummy
-          PKG_VERSION:=9.9.9
-          PKG_RELEASE:=1
+PKG_NAME:=kmod-dummy
+PKG_VERSION:=9.9.9
+PKG_RELEASE:=1
 
-          include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/package.mk
 
-          define Package/kmod-dummy
-            SECTION:=kernel
-            CATEGORY:=Kernel modules
-            SUBMENU:=Network Devices
-            TITLE:=Fake kmod-dummy to satisfy dependencies
-          endef
+define Package/kmod-dummy
+  SECTION:=kernel
+  CATEGORY:=Kernel modules
+  SUBMENU:=Network Devices
+  TITLE:=Fake kmod-dummy to satisfy dependencies
+endef
 
-          define Package/kmod-dummy/description
-            This is a fake kmod-dummy package designed to bypass dependency checks.
-          endef
+define Package/kmod-dummy/description
+  This is a fake kmod-dummy package designed to bypass dependency checks.
+endef
 
-          define Build/Compile
-          # Nothing to compile
-          endef
+# 保持为空，防止命令没有 Tab 缩进导致 Make 报错
+define Build/Compile
+endof
 
-          define Package/kmod-dummy/install
-          # Nothing to install
-          true
-          endef
+define Package/kmod-dummy/install
+endof
 
-          $(eval $(call BuildPackage,kmod-dummy))
-          EOF
+$(eval $(call BuildPackage,kmod-dummy))
+EOF
 
       - name: Configure and compile
         run: |
