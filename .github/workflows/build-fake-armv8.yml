@@ -51,4 +51,28 @@ jobs:
           echo '  CATEGORY:=Kernel modules' >> sdk/package/kmod-dummy/Makefile
           echo '  SUBMENU:=Network Devices' >> sdk/package/kmod-dummy/Makefile
           echo '  TITLE:=Fake kmod-dummy to satisfy dependencies' >> sdk/package/kmod-dummy/Makefile
-          echo 'endef' >> sdk/package/kmod-dummy
+          echo 'endef' >> sdk/package/kmod-dummy/Makefile
+          echo 'define Package/kmod-dummy/description' >> sdk/package/kmod-dummy/Makefile
+          echo '  This is a fake kmod-dummy package designed to bypass dependency checks.' >> sdk/package/kmod-dummy/Makefile
+          echo 'endef' >> sdk/package/kmod-dummy/Makefile
+          echo 'define Build/Compile' >> sdk/package/kmod-dummy/Makefile
+          echo 'endef' >> sdk/package/kmod-dummy/Makefile
+          echo 'define Package/kmod-dummy/install' >> sdk/package/kmod-dummy/Makefile
+          echo 'endef' >> sdk/package/kmod-dummy/Makefile
+          echo '$(eval $(call BuildPackage,kmod-dummy))' >> sdk/package/kmod-dummy/Makefile
+
+      - name: Configure and compile
+        run: |
+          cd sdk
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+          echo "CONFIG_PACKAGE_kmod-dummy=y" >> .config
+          make defconfig
+          make package/kmod-dummy/compile V=s -j$(nproc)
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kmod-dummy-fake-armv8
+          path: |
+            sdk/bin/packages/*/*/kmod-dummy*.apk
