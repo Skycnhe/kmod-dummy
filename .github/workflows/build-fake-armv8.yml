@@ -40,49 +40,15 @@ jobs:
       - name: Create Fake kmod-dummy package
         run: |
           mkdir -p sdk/package/kmod-dummy
-          # 靠左对齐写入，确保无任何 Yaml 缩进带来的空格污染
-          cat << 'EOF' > sdk/package/kmod-dummy/Makefile
-include $(TOPDIR)/rules.mk
-
-PKG_NAME:=kmod-dummy
-PKG_VERSION:=9.9.9
-PKG_RELEASE:=1
-
-include $(INCLUDE_DIR)/package.mk
-
-define Package/kmod-dummy
-  SECTION:=kernel
-  CATEGORY:=Kernel modules
-  SUBMENU:=Network Devices
-  TITLE:=Fake kmod-dummy to satisfy dependencies
-endef
-
-define Package/kmod-dummy/description
-  This is a fake kmod-dummy package designed to bypass dependency checks.
-endef
-
-# 保持为空，防止命令没有 Tab 缩进导致 Make 报错
-define Build/Compile
-endof
-
-define Package/kmod-dummy/install
-endof
-
-$(eval $(call BuildPackage,kmod-dummy))
-EOF
-
-      - name: Configure and compile
-        run: |
-          cd sdk
-          ./scripts/feeds update -a
-          ./scripts/feeds install -a
-          echo "CONFIG_PACKAGE_kmod-dummy=y" >> .config
-          make defconfig
-          make package/kmod-dummy/compile V=s -j$(nproc)
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: kmod-dummy-fake-armv8
-          path: |
-            sdk/bin/packages/*/*/kmod-dummy*.apk
+          # 使用绝对安全的 echo 逐行写入，免去一切格式缩进烦恼，并修正了 endef 的拼写
+          echo 'include $(TOPDIR)/rules.mk' > sdk/package/kmod-dummy/Makefile
+          echo 'PKG_NAME:=kmod-dummy' >> sdk/package/kmod-dummy/Makefile
+          echo 'PKG_VERSION:=9.9.9' >> sdk/package/kmod-dummy/Makefile
+          echo 'PKG_RELEASE:=1' >> sdk/package/kmod-dummy/Makefile
+          echo 'include $(INCLUDE_DIR)/package.mk' >> sdk/package/kmod-dummy/Makefile
+          echo 'define Package/kmod-dummy' >> sdk/package/kmod-dummy/Makefile
+          echo '  SECTION:=kernel' >> sdk/package/kmod-dummy/Makefile
+          echo '  CATEGORY:=Kernel modules' >> sdk/package/kmod-dummy/Makefile
+          echo '  SUBMENU:=Network Devices' >> sdk/package/kmod-dummy/Makefile
+          echo '  TITLE:=Fake kmod-dummy to satisfy dependencies' >> sdk/package/kmod-dummy/Makefile
+          echo 'endef' >> sdk/package/kmod-dummy
