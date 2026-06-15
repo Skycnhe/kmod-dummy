@@ -1,0 +1,86 @@
+name: Build Fake kmod-dummy APK (ARMv8)
+
+on:
+  workflow_dispatch:
+    inputs:
+      sdk_url:
+        description: 'OpenWrt SDK Download URL'
+        required: true
+        default: 'https://downloads.openwrt.org/releases/25.12.4/targets/armsr/armv8/openwrt-sdk-25.12.4-armsr-armv8_gcc-14.3.0_musl.Linux-x86_64.tar.zst'
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libncurses5-dev gawk git gettext unzip file wget rsync zstd
+
+      - name: Download and extract SDK
+        run: |
+          EXT="${{ github.event.inputs.sdk_url }}"
+          EXT="${EXT##*.}"
+          
+          wget "${{ github.event.inputs.sdk_url }}" -O sdk.tar.${EXT}
+          mkdir sdk
+          
+          if [ "$EXT" = "zst" ]; then
+            tar -I zstd -xf sdk.tar.zst -C sdk --strip-components=1
+          else
+            tar -xf sdk.tar.xz -C sdk --strip-components=1
+          fi
+
+      - name: Create Fake kmod-dummy package
+        run: |
+          mkdir -p sdk/package/kmod-dummy
+          cat << 'EOF' > sdk/package/kmod-dummy/Makefile
+          include $(TOPDIR)/rules.mk
+
+          PKG_NAME:=kmod-dummy
+          PKG_VERSION:=9.9.9
+          PKG_RELEASE:=1
+
+          include $(INCLUDE_DIR)/package.mk
+
+          define Package/kmod-dummy
+            SECTION:=kernel
+            CATEGORY:=Kernel modules
+            SUBMENU:=Network Devices
+            TITLE:=Fake kmod-dummy to satisfy dependencies
+          endef
+
+          define Package/kmod-dummy/description
+            This is a fake kmod-dummy package designed to bypass dependency checks.
+          endef
+
+          define Build/Compile
+          # Nothing to compile
+          endef
+
+          define Package/kmod-dummy/install
+          # Nothing to install
+          true
+          endef
+
+          $(eval $(call BuildPackage,kmod-dummy))
+          EOF
+
+      - name: Configure and compile
+        run: |
+          cd sdk
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+          echo "CONFIG_PACKAGE_kmod-dummy=y" >> .config
+          make defconfig
+          make package/kmod-dummy/compile V=s -j$(nproc)
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kmod-dummy-fake-armv8
+          path: |
+            sdk/bin/packages/*/*/kmod-dummy*.apk
