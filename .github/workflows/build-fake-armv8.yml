@@ -6,7 +6,7 @@ on:
       sdk_url:
         description: 'OpenWrt SDK Download URL'
         required: true
-        default: 'https://downloads.openwrt.org/releases/24.10.2/targets/rockchip/armv8/openwrt-sdk-24.10.2-rockchip-armv8_gcc-13.3.0_musl.Linux-x86_64.tar.zst'
+        default: 'https://downloads.openwrt.org/releases/25.12.4/targets/armsr/armv8/openwrt-sdk-25.12.4-armsr-armv8_gcc-14.3.0_musl.Linux-x86_64.tar.zst'
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
@@ -21,7 +21,8 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libncurses5-dev gawk git gettext unzip file wget rsync zstd
+          # 已经补充安装了 python3-pyelftools 解决 u-boot 预检失败问题
+          sudo apt-get install -y build-essential libncurses5-dev gawk git gettext unzip file wget rsync zstd python3-pyelftools
 
       - name: Download and extract SDK
         run: |
@@ -40,7 +41,6 @@ jobs:
       - name: Create Fake kmod-dummy package
         run: |
           mkdir -p sdk/package/kmod-dummy
-          # 使用绝对安全的 echo 逐行写入，免去一切格式缩进烦恼，并修正了 endef 的拼写
           echo 'include $(TOPDIR)/rules.mk' > sdk/package/kmod-dummy/Makefile
           echo 'PKG_NAME:=kmod-dummy' >> sdk/package/kmod-dummy/Makefile
           echo 'PKG_VERSION:=9.9.9' >> sdk/package/kmod-dummy/Makefile
