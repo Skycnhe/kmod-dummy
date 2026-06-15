@@ -1,4 +1,6 @@
 # kmod-dummy
+根据openwrt 25.12
+
 安装方法
 上传到OP/tmp
 
