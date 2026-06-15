@@ -1,4 +1,4 @@
-name: Build Fake kmod-dummy APK (ARMv8)
+name: Build and Release Fake kmod-dummy APK
 
 on:
   workflow_dispatch:
@@ -7,6 +7,10 @@ on:
         description: 'OpenWrt SDK Download URL'
         required: true
         default: 'https://downloads.openwrt.org/releases/25.12.4/targets/armsr/armv8/openwrt-sdk-25.12.4-armsr-armv8_gcc-14.3.0_musl.Linux-x86_64.tar.zst'
+
+# 必须赋予工作流向仓库写入 Releases 的权限
+permissions:
+  contents: write
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
@@ -55,11 +59,9 @@ jobs:
           echo '  This is a fake kmod-dummy package designed to bypass dependency checks.' >> sdk/package/kmod-dummy/Makefile
           echo 'endef' >> sdk/package/kmod-dummy/Makefile
           echo 'define Build/Compile' >> sdk/package/kmod-dummy/Makefile
-          # 使用 printf \t 写入一个纯物理 Tab 字符开头的 true 命令
           printf '\ttrue\n' >> sdk/package/kmod-dummy/Makefile
           echo 'endef' >> sdk/package/kmod-dummy/Makefile
           echo 'define Package/kmod-dummy/install' >> sdk/package/kmod-dummy/Makefile
-          # 使用 printf \t 写入一个纯物理 Tab 字符开头的 true 命令
           printf '\ttrue\n' >> sdk/package/kmod-dummy/Makefile
           echo 'endef' >> sdk/package/kmod-dummy/Makefile
           echo '$(eval $(call BuildPackage,kmod-dummy))' >> sdk/package/kmod-dummy/Makefile
@@ -73,9 +75,18 @@ jobs:
           make defconfig
           make package/kmod-dummy/compile V=s -j$(nproc)
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+      - name: 整理并提取编译好的 APK 文件
+        run: |
+          mkdir -p release_files
+          # 将编译好的 .apk 文件复制到 release_files 文件夹中准备发布
+          find sdk/bin/packages/ -name "kmod-dummy*.apk" -exec cp {} release_files/ \;
+
+      - name: 自动创建 GitHub Release 并发布文件
+        uses: softprops/action-gh-release@v2
         with:
-          name: kmod-dummy-fake-armv8
-          path: |
-            sdk/bin/packages/*/*/kmod-dummy*.apk
+          tag_name: "v9.9.9-r1"
+          name: "Fake kmod-dummy APK Release"
+          body: "通过 OpenWrt SDK 自动构建的通用型伪装 kmod-dummy.apk，用于绕过新版 OpenWrt 安装软件时的依赖检测。"
+          draft: false
+          prerelease: false
+          files: release_files/*.apk
