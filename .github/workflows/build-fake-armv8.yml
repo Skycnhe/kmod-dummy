@@ -21,7 +21,6 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          # 已经补充安装了 python3-pyelftools 解决 u-boot 预检失败问题
           sudo apt-get install -y build-essential libncurses5-dev gawk git gettext unzip file wget rsync zstd python3-pyelftools
 
       - name: Download and extract SDK
@@ -56,8 +55,12 @@ jobs:
           echo '  This is a fake kmod-dummy package designed to bypass dependency checks.' >> sdk/package/kmod-dummy/Makefile
           echo 'endef' >> sdk/package/kmod-dummy/Makefile
           echo 'define Build/Compile' >> sdk/package/kmod-dummy/Makefile
+          # 使用 printf \t 写入一个纯物理 Tab 字符开头的 true 命令
+          printf '\ttrue\n' >> sdk/package/kmod-dummy/Makefile
           echo 'endef' >> sdk/package/kmod-dummy/Makefile
           echo 'define Package/kmod-dummy/install' >> sdk/package/kmod-dummy/Makefile
+          # 使用 printf \t 写入一个纯物理 Tab 字符开头的 true 命令
+          printf '\ttrue\n' >> sdk/package/kmod-dummy/Makefile
           echo 'endef' >> sdk/package/kmod-dummy/Makefile
           echo '$(eval $(call BuildPackage,kmod-dummy))' >> sdk/package/kmod-dummy/Makefile
 
